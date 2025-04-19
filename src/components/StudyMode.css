@@ -1,0 +1,225 @@
+.study-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+}
+
+.study-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.study-header h2 {
+  font-size: 24px;
+  color: #333;
+}
+
+.search-container {
+  max-width: 300px;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 15px;
+  border: 1px solid #ddd;
+  border-radius: 6px;
+  font-size: 16px;
+}
+
+.minerals-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+  gap: 20px;
+}
+
+.mineral-card {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+  cursor: pointer;
+}
+
+.mineral-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+.mineral-card-image {
+  height: 180px;
+  overflow: hidden;
+}
+
+.mineral-card-image img, 
+.mineral-card-image svg {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.mineral-card h3 {
+  padding: 15px 15px 5px;
+  font-size: 18px;
+  margin: 0;
+  color: #333;
+}
+
+.mineral-formula {
+  padding: 0 15px 15px;
+  margin: 0;
+  color: #666;
+  font-style: italic;
+}
+
+/* Mineral Detail */
+.mineral-detail {
+  background-color: #fff;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+}
+
+.back-btn {
+  background-color: transparent;
+  color: #4a6fbf;
+  border: 1px solid #4a6fbf;
+  border-radius: 4px;
+  padding: 8px 16px;
+  margin-bottom: 20px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.back-btn:hover {
+  background-color: #4a6fbf;
+  color: white;
+}
+
+.mineral-detail h3 {
+  font-size: 24px;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.detail-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+}
+
+.detail-image {
+  width: 100%;
+  max-height: 400px;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
+.detail-image img, 
+.detail-image svg {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  background-color: #f9f9f9;
+}
+
+.detail-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.info-item h4 {
+  font-size: 18px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.info-item p {
+  margin: 0;
+  line-height: 1.6;
+  color: #555;
+}
+
+.info-item ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.info-item li {
+  margin-bottom: 8px;
+  color: #555;
+}
+
+.mineral-classification {
+  padding: 0 15px 5px;
+  margin: 0;
+  color: #4a6fbf;
+  font-weight: 500;
+  font-size: 14px;
+}
+
+.image-nav {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 15px;
+  gap: 10px;
+}
+
+.image-nav-btn {
+  background-color: #5783db;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  font-size: 14px;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  min-width: 100px;
+}
+
+.image-nav-btn:disabled {
+  background-color: #cccccc;
+  cursor: not-allowed;
+}
+
+.image-nav-btn:hover:not(:disabled) {
+  background-color: #4a6fbf;
+}
+
+.image-counter {
+  font-size: 14px;
+  color: #666;
+}
+
+.disclaimer {
+  margin-top: 20px;
+  padding: 10px 15px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  font-size: 13px;
+  color: #666;
+  border-left: 3px solid #5783db;
+}
+
+@media (max-width: 768px) {
+  .study-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 15px;
+  }
+  
+  .search-container {
+    max-width: 100%;
+  }
+  
+  .detail-content {
+    grid-template-columns: 1fr;
+  }
+} 

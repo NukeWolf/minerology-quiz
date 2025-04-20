@@ -142,9 +142,9 @@ const processCSV = async () => {
             key.includes(mineralKey)) {
           
           // Only add URL if the mineral has less than 50 URLs
-          if (value.newUrls.length < 50) {
+          if (value.newUrls.length < 100) {
             try {
-              console.log(`Line ${index+1}: Downloading image for ${value.name} (${value.newUrls.length+1}/50): ${url}`);
+              console.log(`Line ${index+1}: Downloading image for ${value.name} (${value.newUrls.length+1}/100): ${url}`);
               const localUrl = await downloadImage(url, value.name);
               minerals[key].newUrls.push(localUrl);
               found = true;
@@ -154,7 +154,7 @@ const processCSV = async () => {
               console.error(`Error downloading ${url}: ${error.message}`);
             }
           } else {
-            console.log(`Line ${index+1}: Skipping ${url} for ${value.name} (already at 50 images limit)`);
+            console.log(`Line ${index+1}: Skipping ${url} for ${value.name} (already at 100 images limit)`);
           }
           break;
         }

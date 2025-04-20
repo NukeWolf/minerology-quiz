@@ -344,7 +344,14 @@ input:checked + .toggle-slider:before {
 }
 
 .next-btn:hover {
-  background-color: #45a049;
+  background-color: #4a6fbf;
+}
+
+.key-hint {
+  font-size: 14px;
+  opacity: 0.8;
+  font-weight: normal;
+  margin-left: 5px;
 }
 
 .hint-section {

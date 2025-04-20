@@ -128,6 +128,23 @@ const Quiz = () => {
     }
   }, [hardMode, currentMineral, isCorrect]);
 
+  // Handle Enter key press to proceed to next question
+  useEffect(() => {
+    const handleKeyPress = (event: KeyboardEvent) => {
+      // If the answer has been revealed and Enter key is pressed, move to the next question
+      if (isCorrect !== null && event.key === 'Enter') {
+        handleNextQuestion();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyPress);
+    
+    // Clean up the event listener when component unmounts or deps change
+    return () => {
+      window.removeEventListener('keydown', handleKeyPress);
+    };
+  }, [isCorrect]); // Only re-attach when isCorrect changes
+
   // Handle user selection (multiple choice)
   const handleOptionSelect = (mineralId: string) => {
     if (isCorrect !== null) return; // Prevent multiple selections after answer is revealed
@@ -458,7 +475,9 @@ const Quiz = () => {
             {currentMineral.classification && <p>Classification: {currentMineral.classification}</p>}
             {currentMineral.characteristics && <p>{currentMineral.characteristics}</p>}
           </div>
-          <button className="next-btn" onClick={handleNextQuestion}>Next Question</button>
+          <button className="next-btn" onClick={handleNextQuestion}>
+            Next Question <span className="key-hint">(or press Enter)</span>
+          </button>
         </div>
       )}
       

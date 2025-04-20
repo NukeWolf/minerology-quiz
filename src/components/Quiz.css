@@ -230,6 +230,41 @@ input:checked + .toggle-slider:before {
   max-height: 400px;
 }
 
+.mineral-description {
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  text-align: left;
+}
+
+.mineral-description h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  color: #333;
+  font-size: 18px;
+  text-align: center;
+}
+
+.mineral-description ul {
+  margin: 0;
+  padding-left: 20px;
+}
+
+.mineral-description li {
+  margin-bottom: 8px;
+  color: #333;
+  line-height: 1.5;
+}
+
+.no-description {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  margin: 20px 0;
+}
+
 .options {
   display: grid;
   grid-template-columns: repeat(2, 1fr);

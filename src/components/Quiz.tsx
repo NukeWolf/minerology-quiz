@@ -25,6 +25,7 @@ const Quiz = () => {
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [seenImages, setSeenImages] = useLocalStorage<SeenImages>('mineralSeenImages', {});
   const [hardMode, setHardMode] = useLocalStorage<boolean>('mineralQuizHardMode', false);
+  const [descriptionMode, setDescriptionMode] = useLocalStorage<boolean>('mineralQuizDescriptionMode', false);
   const [textAnswer, setTextAnswer] = useState('');
   const [showAutocomplete, setShowAutocomplete] = useLocalStorage<boolean>('mineralQuizAutocomplete', true);
   const [autocompleteOptions, setAutocompleteOptions] = useState<string[]>([]);
@@ -62,8 +63,8 @@ const Quiz = () => {
     
     setOptions(optionsArray);
 
-    // Select an unseen image if possible
-    if (mineral.imageUrls.length > 0) {
+    // Select an unseen image if possible and not in description mode
+    if (mineral.imageUrls.length > 0 && !descriptionMode) {
       selectUniqueImage(mineral);
     } else {
       setCurrentImageIndex(0);
@@ -203,6 +204,13 @@ const Quiz = () => {
     generateQuestion();
   };
 
+  // Toggle description mode
+  const toggleDescriptionMode = () => {
+    setDescriptionMode(!descriptionMode);
+    // Reset current question when toggling modes
+    generateQuestion();
+  };
+
   // Toggle autocomplete
   const toggleAutocomplete = () => {
     setShowAutocomplete(!showAutocomplete);
@@ -242,6 +250,44 @@ const Quiz = () => {
     return currentMineral.imageUrls[currentImageIndex];
   };
 
+  // Generate a physical description for the mineral
+  const getPhysicalDescription = (mineral: Mineral) => {
+    if (!mineral) return [];
+
+    const descriptions = [];
+
+    if (mineral.color) {
+      descriptions.push(`Color: ${mineral.color}`);
+    }
+    
+    if (mineral.luster) {
+      descriptions.push(`Luster: ${mineral.luster}`);
+    }
+    
+    if (mineral.hardness) {
+      descriptions.push(`Hardness: ${mineral.hardness}`);
+    }
+    
+    if (mineral.crystalHabit) {
+      descriptions.push(`Crystal Habit: ${mineral.crystalHabit}`);
+    }
+
+    if (mineral.fracture) {
+      descriptions.push(`Fracture: ${mineral.fracture}`);
+    }
+
+    if (mineral.cleavage) {
+      descriptions.push(`Cleavage: ${mineral.cleavage}`);
+    }
+    
+    if (mineral.specificGravity) {
+      descriptions.push(`Specific Gravity: ${mineral.specificGravity}`);
+    }
+
+    // Filter out empty descriptions and return
+    return descriptions.filter(desc => desc);
+  };
+
   if (!currentMineral) return <div>Loading...</div>;
 
   // Determine if there are more hints available
@@ -249,6 +295,9 @@ const Quiz = () => {
 
   // Check if the mineral has multiple images
   const hasMultipleImages = currentMineral?.imageUrls.length > 1;
+
+  // Get physical description
+  const physicalDescription = getPhysicalDescription(currentMineral);
 
   return (
     <div className="quiz-container">
@@ -262,6 +311,21 @@ const Quiz = () => {
                 type="checkbox"
                 checked={hardMode}
                 onChange={toggleHardMode}
+              />
+              <span className="toggle-slider"></span>
+            </div>
+          </label>
+        </div>
+        
+        <div className="mode-toggle">
+          <label className="toggle-label" htmlFor="descriptionMode">
+            Description Mode
+            <div className="toggle-switch">
+              <input
+                id="descriptionMode"
+                type="checkbox"
+                checked={descriptionMode}
+                onChange={toggleDescriptionMode}
               />
               <span className="toggle-slider"></span>
             </div>
@@ -302,19 +366,34 @@ const Quiz = () => {
       
       <div className="question">
         <h2>Identify this mineral:</h2>
-        <div className="mineral-image">
-          {imageError ? (
-            <MineralPlaceholder />
-          ) : (
-            <img 
-              src={getCurrentImageUrl()} 
-              alt="Mystery mineral" 
-              onError={handleImageError}
-            />
-          )}
-        </div>
         
-        {isCorrect === null && hasMultipleImages && (
+        {descriptionMode ? (
+          <div className="mineral-description">
+            <h3>Physical Properties:</h3>
+            <ul>
+              {physicalDescription.map((desc, index) => (
+                <li key={index}>{desc}</li>
+              ))}
+            </ul>
+            {physicalDescription.length === 0 && (
+              <p className="no-description">No physical description available for this mineral.</p>
+            )}
+          </div>
+        ) : (
+          <div className="mineral-image">
+            {imageError ? (
+              <MineralPlaceholder />
+            ) : (
+              <img 
+                src={getCurrentImageUrl()} 
+                alt="Mystery mineral" 
+                onError={handleImageError}
+              />
+            )}
+          </div>
+        )}
+        
+        {isCorrect === null && hasMultipleImages && !descriptionMode && (
           <button className="skip-image-btn" onClick={handleSkipImage}>
             Skip Image
           </button>

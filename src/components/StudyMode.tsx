@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { minerals, Mineral } from '../data/minerals';
 import MineralPlaceholder from './MineralPlaceholder';
 import './StudyMode.css';
@@ -21,12 +21,26 @@ const StudyMode: React.FC = () => {
     (mineral.classification && mineral.classification.toLowerCase().includes(searchTerm.toLowerCase()))
   );
 
+  // Cache the preview image URLs for each mineral
+  // This ensures the images don't change on each render
+  const previewImageUrls = useMemo(() => {
+    const urls: Record<string, string> = {};
+    minerals.forEach(mineral => {
+      if (mineral.imageUrls.length > 0) {
+        const randomIndex = Math.floor(Math.random() * mineral.imageUrls.length);
+        urls[mineral.id] = mineral.imageUrls[randomIndex];
+      }
+    });
+    return urls;
+  }, []); // Empty dependency array means this only runs once on mount
+
   // Navigate to next image
   const handleNextImage = () => {
     if (selectedMineral && selectedMineral.imageUrls.length > 1) {
       setCurrentImageIndex((prevIndex) => 
         (prevIndex + 1) % selectedMineral.imageUrls.length
       );
+      console.log("Navigated to next image");
     }
   };
 
@@ -36,19 +50,56 @@ const StudyMode: React.FC = () => {
       setCurrentImageIndex((prevIndex) => 
         prevIndex === 0 ? selectedMineral.imageUrls.length - 1 : prevIndex - 1
       );
+      console.log("Navigated to previous image");
     }
   };
 
-  // Handle mineral selection
+  // Show a random image
+  const handleRandomImage = () => {
+    if (selectedMineral && selectedMineral.imageUrls.length > 1) {
+      // Get a random index different from the current one
+      let newIndex;
+      do {
+        newIndex = Math.floor(Math.random() * selectedMineral.imageUrls.length);
+      } while (newIndex === currentImageIndex && selectedMineral.imageUrls.length > 1);
+      
+      setCurrentImageIndex(newIndex);
+      console.log(`Showing random image ${newIndex + 1} of ${selectedMineral.imageUrls.length}`);
+    }
+  };
+
+  // Handle mineral selection and set a random image
   const handleSelectMineral = (mineral: Mineral) => {
     setSelectedMineral(mineral);
-    setCurrentImageIndex(0); // Reset to first image when selecting a new mineral
+    // Debug mineral info
+    console.log(`Selected mineral: ${mineral.name}`);
+    console.log(`Image URLs count: ${mineral.imageUrls.length}`);
+    console.log(`Image URLs:`, mineral.imageUrls);
+    
+    // Select a random image index if there are multiple images
+    if (mineral.imageUrls.length > 1) {
+      // Using a more robust way to select a random index
+      // Get current timestamp for even more randomness
+      const timestamp = new Date().getTime();
+      const randomIndex = Math.floor((Math.random() * timestamp) % mineral.imageUrls.length);
+      console.log(`Selected random image ${randomIndex + 1} of ${mineral.imageUrls.length} for ${mineral.name}`);
+      setCurrentImageIndex(randomIndex);
+    } else {
+      console.log(`Only one image available for ${mineral.name}, using index 0`);
+      setCurrentImageIndex(0);
+    }
   };
 
   // Get current image URL for selected mineral
   const getCurrentImageUrl = () => {
     if (!selectedMineral || !selectedMineral.imageUrls.length) return "";
     return selectedMineral.imageUrls[currentImageIndex];
+  };
+
+  // Get preview image for a mineral (stable between renders)
+  const getPreviewImage = (mineral: Mineral) => {
+    if (!mineral.imageUrls.length) return "";
+    return previewImageUrls[mineral.id] || mineral.imageUrls[0]; // Fallback to first image if somehow not cached
   };
 
   return (
@@ -89,21 +140,39 @@ const StudyMode: React.FC = () => {
                   onError={() => handleImageError(`${selectedMineral.id}-${currentImageIndex}`)}
                 />
               )}
-              {selectedMineral.imageUrls.length > 1 && (
-                <div className="image-nav">
-                  <div className="image-nav-buttons">
-                    <button className="image-nav-btn prev-btn" onClick={handlePrevImage}>
-                      &larr; Previous
-                    </button>
-                    <span className="image-counter">
-                      {currentImageIndex + 1}/{selectedMineral.imageUrls.length}
-                    </span>
-                    <button className="image-nav-btn next-btn" onClick={handleNextImage}>
-                      Next &rarr;
-                    </button>
-                  </div>
+              
+              {/* Navigation controls - always visible */}
+              <div className="image-nav">
+                <div className="image-nav-buttons">
+                  <button 
+                    className="image-nav-btn prev-btn" 
+                    onClick={handlePrevImage}
+                    disabled={selectedMineral.imageUrls.length <= 1}
+                  >
+                    ← Previous
+                  </button>
+                  
+                  <button 
+                    className="image-nav-btn random-btn" 
+                    onClick={handleRandomImage}
+                    disabled={selectedMineral.imageUrls.length <= 1}
+                  >
+                    Random
+                  </button>
+                  
+                  <span className="image-counter">
+                    {currentImageIndex + 1}/{selectedMineral.imageUrls.length}
+                  </span>
+                  
+                  <button 
+                    className="image-nav-btn next-btn" 
+                    onClick={handleNextImage}
+                    disabled={selectedMineral.imageUrls.length <= 1}
+                  >
+                    Next →
+                  </button>
                 </div>
-              )}
+              </div>
             </div>
             
             <div className="detail-info">
@@ -154,7 +223,7 @@ const StudyMode: React.FC = () => {
                   <MineralPlaceholder />
                 ) : (
                   <img 
-                    src={mineral.imageUrls[0]} 
+                    src={getPreviewImage(mineral)} 
                     alt={mineral.name} 
                     onError={() => handleImageError(mineral.id)}
                   />

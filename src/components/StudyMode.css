@@ -61,6 +61,22 @@
   object-fit: cover;
 }
 
+.mineral-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: opacity 0.3s ease;
+}
+
+.mineral-card-image img.loading {
+  opacity: 0;
+  background-color: #f0f0f0;
+}
+
+.mineral-card-image img.loaded {
+  opacity: 1;
+}
+
 .mineral-card h3 {
   padding: 15px 15px 5px;
   font-size: 18px;

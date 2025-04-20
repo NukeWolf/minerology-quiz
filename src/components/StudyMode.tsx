@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useRef, useEffect, useCallback } from 'react';
 import { minerals, Mineral } from '../data/minerals';
 import MineralPlaceholder from './MineralPlaceholder';
 import './StudyMode.css';
@@ -8,11 +8,61 @@ const StudyMode: React.FC = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedMineral, setSelectedMineral] = useState<Mineral | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
+  // Track which images have been loaded to avoid reloading
+  const [loadedImages, setLoadedImages] = useState<Record<string, boolean>>({});
+  // Store observed elements to disconnect them when component unmounts
+  const observers = useRef<Record<string, IntersectionObserver>>({});
+  
+  // Clear all intersection observers when component unmounts
+  useEffect(() => {
+    return () => {
+      Object.values(observers.current).forEach(observer => {
+        observer.disconnect();
+      });
+    };
+  }, []);
 
   // Handle image loading error
   const handleImageError = (mineralId: string) => {
     setImageErrors(prev => ({ ...prev, [mineralId]: true }));
   };
+
+  // Handle successful image load
+  const handleImageLoad = (imageId: string) => {
+    setLoadedImages(prev => ({ ...prev, [imageId]: true }));
+  };
+
+  // Create a reusable intersection observer setup function
+  const setupIntersectionObserver = useCallback((elementId: string) => {
+    const observerOptions = {
+      root: null, // Use the viewport as root
+      rootMargin: '100px', // Load images 100px before they enter viewport
+      threshold: 0.1 // Trigger when 10% visible
+    };
+
+    // Create a new observer for this element
+    const observer = new IntersectionObserver((entries) => {
+      entries.forEach(entry => {
+        if (entry.isIntersecting) {
+          const element = entry.target as HTMLImageElement;
+          
+          // Only set the src if the image hasn't already been loaded
+          if (!loadedImages[elementId] && element.dataset.src) {
+            element.src = element.dataset.src;
+            
+            // Disconnect observer once image is loading
+            observer.disconnect();
+            delete observers.current[elementId];
+          }
+        }
+      });
+    }, observerOptions);
+
+    // Store observer reference for cleanup
+    observers.current[elementId] = observer;
+    
+    return observer;
+  }, [loadedImages]);
 
   // Filter minerals based on search term
   const filteredMinerals = minerals.filter(mineral => 
@@ -40,7 +90,6 @@ const StudyMode: React.FC = () => {
       setCurrentImageIndex((prevIndex) => 
         (prevIndex + 1) % selectedMineral.imageUrls.length
       );
-      console.log("Navigated to next image");
     }
   };
 
@@ -50,7 +99,6 @@ const StudyMode: React.FC = () => {
       setCurrentImageIndex((prevIndex) => 
         prevIndex === 0 ? selectedMineral.imageUrls.length - 1 : prevIndex - 1
       );
-      console.log("Navigated to previous image");
     }
   };
 
@@ -64,28 +112,19 @@ const StudyMode: React.FC = () => {
       } while (newIndex === currentImageIndex && selectedMineral.imageUrls.length > 1);
       
       setCurrentImageIndex(newIndex);
-      console.log(`Showing random image ${newIndex + 1} of ${selectedMineral.imageUrls.length}`);
     }
   };
 
   // Handle mineral selection and set a random image
   const handleSelectMineral = (mineral: Mineral) => {
     setSelectedMineral(mineral);
-    // Debug mineral info
-    console.log(`Selected mineral: ${mineral.name}`);
-    console.log(`Image URLs count: ${mineral.imageUrls.length}`);
-    console.log(`Image URLs:`, mineral.imageUrls);
     
     // Select a random image index if there are multiple images
     if (mineral.imageUrls.length > 1) {
-      // Using a more robust way to select a random index
-      // Get current timestamp for even more randomness
       const timestamp = new Date().getTime();
       const randomIndex = Math.floor((Math.random() * timestamp) % mineral.imageUrls.length);
-      console.log(`Selected random image ${randomIndex + 1} of ${mineral.imageUrls.length} for ${mineral.name}`);
       setCurrentImageIndex(randomIndex);
     } else {
-      console.log(`Only one image available for ${mineral.name}, using index 0`);
       setCurrentImageIndex(0);
     }
   };
@@ -101,6 +140,26 @@ const StudyMode: React.FC = () => {
     if (!mineral.imageUrls.length) return "";
     return previewImageUrls[mineral.id] || mineral.imageUrls[0]; // Fallback to first image if somehow not cached
   };
+
+  // Setup image observer for lazy loading
+  const imageRef = useCallback((node: HTMLImageElement | null, imageId: string, imageUrl: string) => {
+    if (node && !loadedImages[imageId]) {
+      // Store the URL in data-src attribute instead of src
+      node.dataset.src = imageUrl;
+      
+      // Use native lazy loading as a backup/enhancement
+      node.loading = 'lazy';
+      
+      // If this image was already loaded before (from cache), set src directly
+      if (loadedImages[imageId]) {
+        node.src = imageUrl;
+      } else {
+        // Setup the observer to load when visible
+        const observer = setupIntersectionObserver(imageId);
+        observer.observe(node);
+      }
+    }
+  }, [loadedImages, setupIntersectionObserver]);
 
   return (
     <div className="study-container">
@@ -138,10 +197,11 @@ const StudyMode: React.FC = () => {
                   src={getCurrentImageUrl()}
                   alt={selectedMineral.name} 
                   onError={() => handleImageError(`${selectedMineral.id}-${currentImageIndex}`)}
+                  onLoad={() => handleImageLoad(`${selectedMineral.id}-${currentImageIndex}`)}
+                  loading="lazy"
                 />
               )}
               
-              {/* Navigation controls - always visible */}
               <div className="image-nav">
                 <div className="image-nav-buttons">
                   <button 
@@ -212,28 +272,37 @@ const StudyMode: React.FC = () => {
         </div>
       ) : (
         <div className="minerals-grid">
-          {filteredMinerals.map(mineral => (
-            <div 
-              key={mineral.id} 
-              className="mineral-card"
-              onClick={() => handleSelectMineral(mineral)}
-            >
-              <div className="mineral-card-image">
-                {imageErrors[mineral.id] ? (
-                  <MineralPlaceholder />
-                ) : (
-                  <img 
-                    src={getPreviewImage(mineral)} 
-                    alt={mineral.name} 
-                    onError={() => handleImageError(mineral.id)}
-                  />
-                )}
+          {filteredMinerals.map(mineral => {
+            const imageId = `grid-${mineral.id}`;
+            const imageUrl = getPreviewImage(mineral);
+            
+            return (
+              <div 
+                key={mineral.id} 
+                className="mineral-card"
+                onClick={() => handleSelectMineral(mineral)}
+              >
+                <div className="mineral-card-image">
+                  {imageErrors[mineral.id] ? (
+                    <MineralPlaceholder />
+                  ) : (
+                    <img 
+                      ref={node => imageRef(node, imageId, imageUrl)}
+                      alt={mineral.name} 
+                      onError={() => handleImageError(mineral.id)}
+                      onLoad={() => handleImageLoad(imageId)}
+                      // Only set src directly if already loaded before
+                      src={loadedImages[imageId] ? imageUrl : undefined}
+                      className={loadedImages[imageId] ? "loaded" : "loading"}
+                    />
+                  )}
+                </div>
+                <h3>{mineral.name}</h3>
+                {mineral.classification && <p className="mineral-classification">{mineral.classification}</p>}
+                {mineral.formula && <p className="mineral-formula">{mineral.formula}</p>}
               </div>
-              <h3>{mineral.name}</h3>
-              {mineral.classification && <p className="mineral-classification">{mineral.classification}</p>}
-              {mineral.formula && <p className="mineral-formula">{mineral.formula}</p>}
-            </div>
-          ))}
+            );
+          })}
         </div>
       )}
     </div>
